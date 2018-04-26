@@ -38,9 +38,13 @@ public class IngestTranslatePlugin extends Plugin implements IngestPlugin {
 
   private final Setting<Long> CHECK_INTERVAL_SECONDS = Setting.longSetting("ingest.translate.check_interval", 10, 0,
                                                                             Setting.Property.NodeScope);
+
   // al posto dei secondi usare una cron expression per definire quando effettuare il check
   // vedi https://github.com/jmrozanec/cron-utils
-
+  @Override
+  public List<Setting<?>> getSettings() {
+      return Arrays.asList(CHECK_INTERVAL_SECONDS);
+  }
   @Override
   public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
     Path translateConfigDirectory = parameters.env.configFile().resolve("ingest-translate");

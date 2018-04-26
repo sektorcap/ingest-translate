@@ -177,7 +177,6 @@ final class Translator {
           try {
             Thread.sleep(checkInterval*1000);
             checkMD5AndLoadDictionary();
-            LOGGER.debug("Monitoring Thread [{}] loop", Thread.currentThread().getName());
           } catch(InterruptedException e) {
               Thread.currentThread().interrupt();
           } catch(Exception e) {}

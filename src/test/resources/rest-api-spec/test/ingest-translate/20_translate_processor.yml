@@ -10,7 +10,8 @@
               {
                 "translate" : {
                   "field" : "field1",
-                  "target_field" : "field2"
+                  "target_field" : "field2",
+                  "dictionary" : "dictionary-test.yml"
                 }
               }
             ]
@@ -23,13 +24,12 @@
         type: test
         id: 1
         pipeline: "my_pipeline"
-        body: {field1: "my_value"}
+        body: {field1: "100.11.12.193"}
 
   - do:
       get:
         index: test
         type: test
         id: 1
-  - match: { _source.field1: "my_value" }
-  - match: { _source.field2: "my_value" }
-
+  - match: { _source.field1: "100.11.12.193" }
+  - match: { _source.field2: "tor exit node" }

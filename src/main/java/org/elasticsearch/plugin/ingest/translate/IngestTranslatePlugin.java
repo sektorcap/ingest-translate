@@ -1,5 +1,5 @@
 /*
- * Copyright [2017] [Ettore Caprella]
+ * Copyright [2018] [Ettore Caprella]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,22 +26,29 @@ import org.elasticsearch.plugins.Plugin;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.nio.file.Path;
+
+
+
 
 public class IngestTranslatePlugin extends Plugin implements IngestPlugin {
 
-    public static final Setting<String> YOUR_SETTING =
-            new Setting<>("ingest.translate.setting", "foo", (value) -> value, Setting.Property.NodeScope);
+  private final Setting<Long> CHECK_INTERVAL_SECONDS = Setting.longSetting("ingest.translate.check_interval", 10, 0,
+                                                                            Setting.Property.NodeScope);
+  // al posto dei secondi usare una cron expression per definire quando effettuare il check
+  // vedi https://github.com/jmrozanec/cron-utils
 
-    @Override
-    public List<Setting<?>> getSettings() {
-        return Arrays.asList(YOUR_SETTING);
-    }
+  @Override
+  public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
+    Path translateConfigDirectory = parameters.env.configFile().resolve("ingest-translate");
+    Long checkInterval = CHECK_INTERVAL_SECONDS.get(parameters.env.settings());
 
-    @Override
-    public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
-        return MapBuilder.<String, Processor.Factory>newMapBuilder()
-                .put(TranslateProcessor.TYPE, new TranslateProcessor.Factory())
-                .immutableMap();
-    }
+    return MapBuilder.<String, Processor.Factory>newMapBuilder()
+            .put(TranslateProcessor.TYPE, new TranslateProcessor.Factory(translateConfigDirectory, checkInterval))
+            .immutableMap();
+  }
 
 }

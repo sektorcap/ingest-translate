@@ -6,12 +6,12 @@ buildscript {
   }
 
   dependencies {
-    classpath "org.elasticsearch.gradle:build-tools:6.2.2"
+    classpath "org.elasticsearch.gradle:build-tools:${elasticsearchVersion}"
   }
 }
 
 group = 'org.elasticsearch.plugin.ingest'
-version = '0.0.1-SNAPSHOT'
+version = "${elasticsearchVersion}"
 
 apply plugin: 'java'
 apply plugin: 'elasticsearch.esplugin'
@@ -36,10 +36,30 @@ esplugin {
 // Note, the two dependencies are not really needed as the buildscript dependency gets them in already
 // they are just here as an example
 dependencies {
-  compile 'org.elasticsearch:elasticsearch:6.2.2'
+  compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
+  // compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.10"
+  compile "com.fasterxml.jackson.core:jackson-databind:2.8.10"
+  compile "com.fasterxml.jackson.core:jackson-annotations:2.8.10"
 
-  testCompile 'org.elasticsearch.test:framework:6.2.2'
+  testCompile "org.elasticsearch.test:framework:${elasticsearchVersion}"
 }
+
+task copyTestFiles(type: Copy) {
+  from "${projectDir}/src/test/data/dictionary-test.yml"
+  into "${project.buildDir}/ingest-translate"
+  // include "*.yaml"
+}
+
+project.bundlePlugin.dependsOn(copyTestFiles)
+
+bundlePlugin {
+ from("${project.buildDir}/ingest-translate") {
+   into 'config/'
+ }
+}
+
+compileJava.options.compilerArgs << "-Xlint:-unchecked,-rawtypes"
+compileTestJava.options.compilerArgs << "-Xlint:-unchecked,-rawtypes"
 
 // Set to false to not use elasticsearch checkstyle rules
 checkstyleMain.enabled = true
@@ -53,4 +73,3 @@ thirdPartyAudit.enabled = false
 
 // Uncomment this to skip license header checks
 // licenseHeaders.enabled = false
-

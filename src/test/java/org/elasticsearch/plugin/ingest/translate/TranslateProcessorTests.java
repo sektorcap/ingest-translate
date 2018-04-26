@@ -23,24 +23,58 @@ import org.elasticsearch.test.ESTestCase;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.Charset;
+
+
 
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 
+
+
+// Da testare
+// le varie combinazioni di paremetri (target_field non presente, ignoreMissing, addToRoot,ecc)
+// il thread con la modifica del file
+// stop thread
+
+
+
 public class TranslateProcessorTests extends ESTestCase {
+
+    private static Path translateConfigDirectory;
 
     public void testThatProcessorWorks() throws Exception {
         Map<String, Object> document = new HashMap<>();
-        document.put("source_field", "fancy source field content");
+        String source_field_value = "100.0.111.185";
+        document.put("source_field", source_field_value);
+        String dictionary = "test.yaml";
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
 
-        TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field");
+        Path configDir = createTempDir();
+        translateConfigDirectory = configDir.resolve("ingest-translate");
+        Files.createDirectories(translateConfigDirectory);
+
+        List<String> lines = Arrays.asList(
+          "\"100.0.111.185\": \"known attacker\"",
+          "\"100.11.12.193\": \"tor exit node\"",
+          "\"100.0.111.199\": \"bad reputation\"",
+          "\"100.0.111.126\": \"bot, crawler\""
+        );
+        Files.write(translateConfigDirectory.resolve(dictionary), lines, Charset.forName("UTF-8"));
+
+        Translator translator = new Translator(translateConfigDirectory, dictionary, 10L);
+
+        String tag = randomAlphaOfLength(10);
+        TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
+                                                              false, false, translator);
         processor.execute(ingestDocument);
         Map<String, Object> data = ingestDocument.getSourceAndMetadata();
 
         assertThat(data, hasKey("target_field"));
-        assertThat(data.get("target_field"), is("fancy source field content"));
-        // TODO add fancy assertions here
+        assertThat(data.get("target_field"), is("known attacker"));
     }
 }
-

@@ -23,58 +23,151 @@ import org.elasticsearch.test.ESTestCase;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collections;
 import java.util.List;
 import java.util.Arrays;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.charset.Charset;
 
-
-
-import static org.hamcrest.Matchers.hasKey;
+import static org.elasticsearch.ingest.IngestDocumentMatcher.assertIngestDocument;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-
-
-
-// Da testare
-// le varie combinazioni di paremetri (target_field non presente, ignoreMissing, addToRoot,ecc)
-// il thread con la modifica del file
-// stop thread
-
-
+import static org.hamcrest.Matchers.hasKey;
 
 public class TranslateProcessorTests extends ESTestCase {
 
-    private static Path translateConfigDirectory;
+  private static List<String> dictionary_lines = Arrays.asList(
+    "\"100.0.111.185\": \"known attacker\"",
+    "\"100.11.12.193\": \"tor exit node\"",
+    "\"100.0.111.199\": \"bad reputation\"",
+    "\"100.0.111.126\": \"bot, crawler\""
+  );
+  private static List<String> new_dictionary_lines = Arrays.asList(
+    "\"1.1.1.1\": \"known attacker\"",
+    "\"2.2.2.2\": \"tor exit node\"",
+    "\"3.3.3.3\": \"bad reputation\"",
+    "\"4.4.4.4\": \"bot, crawler\""
+  );
 
-    public void testThatProcessorWorks() throws Exception {
-        Map<String, Object> document = new HashMap<>();
-        String source_field_value = "100.0.111.185";
-        document.put("source_field", source_field_value);
-        String dictionary = "test.yaml";
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+  private Path setupDictionary(String dictionary) throws Exception {
+    Path translateConfigDirectory = createTempDir().resolve("ingest-translate");
+    Files.createDirectories(translateConfigDirectory);
+    Path dictionaryPath = translateConfigDirectory.resolve(dictionary);
+    Files.write(dictionaryPath, dictionary_lines, Charset.forName("UTF-8"));
+    return dictionaryPath;
+  }
 
-        Path configDir = createTempDir();
-        translateConfigDirectory = configDir.resolve("ingest-translate");
-        Files.createDirectories(translateConfigDirectory);
+  private void appendLinesToDictionary(Path dictionaryPath) throws Exception {
+    Files.write(dictionaryPath, new_dictionary_lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+  }
 
-        List<String> lines = Arrays.asList(
-          "\"100.0.111.185\": \"known attacker\"",
-          "\"100.11.12.193\": \"tor exit node\"",
-          "\"100.0.111.199\": \"bad reputation\"",
-          "\"100.0.111.126\": \"bot, crawler\""
-        );
-        Files.write(translateConfigDirectory.resolve(dictionary), lines, Charset.forName("UTF-8"));
+  public void testThatProcessorWorks() throws Exception {
+    IngestDocument ingestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "100.0.111.185"));
 
-        Translator translator = new Translator(translateConfigDirectory, dictionary, 10L);
+    String dictionary = "test.yml";
+    Path dictionaryPath = setupDictionary(dictionary);
+    Translator translator = new Translator(dictionaryPath, 1L);
+    translator.startMonitoring();
 
-        String tag = randomAlphaOfLength(10);
-        TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                              false, false, translator);
-        processor.execute(ingestDocument);
-        Map<String, Object> data = ingestDocument.getSourceAndMetadata();
+    String tag = randomAlphaOfLength(10);
+    TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
+                                                          false, false, translator);
+    processor.execute(ingestDocument);
+    Map<String, Object> data = ingestDocument.getSourceAndMetadata();
+    assertThat(data, hasKey("target_field"));
+    assertThat(data.get("target_field"), is("known attacker"));
 
-        assertThat(data, hasKey("target_field"));
-        assertThat(data.get("target_field"), is("known attacker"));
-    }
+    appendLinesToDictionary(dictionaryPath);
+    Thread.sleep(2000L);
+
+    ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "2.2.2.2"));
+    processor.execute(ingestDocument);
+    data = ingestDocument.getSourceAndMetadata();
+    assertThat(data, hasKey("target_field"));
+    assertThat(data.get("target_field"), is("tor exit node"));
+
+    translator.stopMonitoring();
+    Thread.sleep(3000L);
+
+    assertThat(translator.isMonitoringStarted(), is(false));
+  }
+
+  public void testNoMatch() throws Exception {
+    IngestDocument originalIngestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "10.10.10.10"));
+
+    String dictionary = "test.yml";
+    Path dictionaryPath = setupDictionary(dictionary);
+    Translator translator = new Translator(dictionaryPath, 1L);
+
+    TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
+                                                          false, false, translator);
+    IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
+    processor.execute(ingestDocument);
+    assertIngestDocument(originalIngestDocument, ingestDocument);
+  }
+
+
+  public void testNullValueWithIgnoreMissing() throws Exception {
+    IngestDocument originalIngestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", null));
+
+    String dictionary = "test.yml";
+    Path dictionaryPath = setupDictionary(dictionary);
+    Translator translator = new Translator(dictionaryPath, 1L);
+
+    TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
+                                                          false, true, translator);
+    IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
+    processor.execute(ingestDocument);
+    assertIngestDocument(originalIngestDocument, ingestDocument);
+  }
+
+  public void testNonExistentWithIgnoreMissing() throws Exception {
+    IngestDocument originalIngestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.emptyMap());
+
+    String dictionary = "test.yml";
+    Path dictionaryPath = setupDictionary(dictionary);
+    Translator translator = new Translator(dictionaryPath, 1L);
+
+    TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
+                                                          false, true, translator);
+    IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
+    processor.execute(ingestDocument);
+    assertIngestDocument(originalIngestDocument, ingestDocument);
+  }
+
+  public void testNullWithoutIgnoreMissing() throws Exception {
+    IngestDocument originalIngestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", null));
+
+    String dictionary = "test.yml";
+    Path dictionaryPath = setupDictionary(dictionary);
+    Translator translator = new Translator(dictionaryPath, 1L);
+
+    TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
+                                                          false, false, translator);
+    IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
+    Exception exception = expectThrows(Exception.class, () -> processor.execute(ingestDocument));
+    assertThat(exception.getMessage(), equalTo("field [source_field] is null, cannot extract information from the dictionary."));
+  }
+
+  public void testNonExistentWithoutIgnoreMissing() throws Exception {
+    IngestDocument originalIngestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.emptyMap());
+
+    String dictionary = "test.yml";
+    Path dictionaryPath = setupDictionary(dictionary);
+    Translator translator = new Translator(dictionaryPath, 1L);
+
+    TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
+                                                          false, false, translator);
+    IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
+    Exception exception = expectThrows(Exception.class, () -> processor.execute(ingestDocument));
+    assertThat(exception.getMessage(), equalTo("field [source_field] not present as part of path [source_field]."));
+  }
 }

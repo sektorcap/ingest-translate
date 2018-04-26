@@ -120,7 +120,7 @@ public class TranslateProcessor extends AbstractProcessor {
       synchronized(this) {
         translator = translators.get(dictionary);
         if (translator == null) {
-          translator = new Translator(translateConfigDirectory, dictionary, checkInterval);
+          translator = new Translator(translateConfigDirectory.resolve(dictionary), checkInterval);
           translators.put(dictionary, translator);
           translator.startMonitoring();
         }

@@ -53,7 +53,6 @@ final class Translator {
   private static final Logger LOGGER = Loggers.getLogger(Translator.class);
 
   // Dictionary file attributes
-  private final Path translateConfigDirectory;
   private final Path dictionaryPath;
   private final Long checkInterval;
   private String md5;
@@ -69,12 +68,11 @@ final class Translator {
   private final Lock wlock = rwlock.writeLock();
 
 
-  Translator(Path translateConfigDirectory, String dictionaryFile, Long checkInterval)  throws IOException, NoSuchAlgorithmException {
-    LOGGER.info("Creating Translator for [{}]", dictionaryFile);
+  Translator(Path dictionaryPath, Long checkInterval)  throws IOException, NoSuchAlgorithmException {
+    LOGGER.info("Creating Translator for [{}]", dictionaryPath.getFileName().toString());
 
     // Initialize dictionary file attributes
-    this.translateConfigDirectory = translateConfigDirectory;
-    this.dictionaryPath = translateConfigDirectory.resolve(dictionaryFile);
+    this.dictionaryPath = dictionaryPath;
     this.checkInterval = checkInterval;
     this.md5 = "";
 
@@ -87,10 +85,11 @@ final class Translator {
     try {
       checkMD5AndLoadDictionary();
     } catch(Exception e) {
-      LOGGER.error(() -> new ParameterizedMessage("Failed to create Translator for [{}] with exception", dictionaryFile), e);
+      LOGGER.error(() -> new ParameterizedMessage("Failed to create Translator for [{}] with exception",
+                                                  dictionaryPath.getFileName().toString()), e);
       throw e;
     }
-    LOGGER.info("Translator for [{}] created with {} entries", dictionaryFile, dictionary.size());
+    LOGGER.info("Translator for [{}] created with {} entries", dictionaryPath.getFileName().toString(), dictionary.size());
   }
 
   public Object lookup(String item) {

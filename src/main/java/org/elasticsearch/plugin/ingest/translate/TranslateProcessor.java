@@ -104,7 +104,7 @@ public class TranslateProcessor extends AbstractProcessor {
       throws Exception {
       String field = readStringProperty(TYPE, tag, config, "field");
       String targetField = readOptionalStringProperty(TYPE, tag, config, "target_field");
-      String dictionary = readStringProperty(TYPE, tag, config, "dictionary", "dictionary.yml");
+      String dictionary = readStringProperty(TYPE, tag, config, "dictionary");
       boolean ignoreMissing = readBooleanProperty(TYPE, tag, config, "ignore_missing", false);
       boolean addToRoot = readBooleanProperty(TYPE, tag, config, "add_to_root", false);
 

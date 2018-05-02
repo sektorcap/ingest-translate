@@ -126,7 +126,7 @@ GET /my-index/my-type/3
         "group2",
         "group3"
       ]
-    }
+    }"tor exit node"
   }
 }
 
@@ -177,7 +177,7 @@ GET /my-index/my-type/4
 In `elasticsearch.yml` configuration file you can set the check interval property in order
 to define the interval in seconds for checking the changes on the dictionary files.
 ```
-ingest.translate.check_interval: 3660
+ingest.translate.check_interval: 3600
 ```
 The default value is 3600 seconds.
 

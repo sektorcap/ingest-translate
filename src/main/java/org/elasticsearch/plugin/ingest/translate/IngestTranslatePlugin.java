@@ -36,7 +36,7 @@ import java.nio.file.Path;
 
 public class IngestTranslatePlugin extends Plugin implements IngestPlugin {
 
-  private final Setting<Long> CHECK_INTERVAL_SECONDS = Setting.longSetting("ingest.translate.check_interval", 10, 0,
+  private final Setting<Long> CHECK_INTERVAL_SECONDS = Setting.longSetting("ingest.translate.check_interval", 3600, 0,
                                                                             Setting.Property.NodeScope);
 
   // al posto dei secondi usare una cron expression per definire quando effettuare il check

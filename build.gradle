@@ -45,9 +45,9 @@ dependencies {
 }
 
 task copyTestFiles(type: Copy) {
-  from "${projectDir}/src/test/data/dictionary-test.yml"
+  from "${projectDir}/src/test/data/"
   into "${project.buildDir}/ingest-translate"
-  // include "*.yaml"
+  include "*.yml"
 }
 
 project.bundlePlugin.dependsOn(copyTestFiles)

@@ -1,0 +1,12 @@
+test: fox
+
+ldap:
+  host: server1
+  port: 636
+  base: dc=example,dc=local
+  attribute: uid
+  ssl: true
+  allowed_groups:
+    - group1
+    - group2
+    - group3

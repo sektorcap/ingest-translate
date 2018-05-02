@@ -126,7 +126,7 @@ GET /my-index/my-type/3
         "group2",
         "group3"
       ]
-    }"tor exit node"
+    }
   }
 }
 
@@ -199,7 +199,7 @@ bin/elasticsearch-plugin install file:///path/to/ingest-translate/build/distribu
 ```
 
 ## Java
-Starting from `elasticsearch 6.2`, developers must user Java 9. Seems to be some issue with `openjdk` so use `Oracle Java 9` instead
+Starting from `elasticsearch 6.2`, developers must use Java 9.
 
 ## Bugs & TODO
 

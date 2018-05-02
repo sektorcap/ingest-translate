@@ -178,7 +178,10 @@ final class Translator {
             checkMD5AndLoadDictionary();
           } catch(InterruptedException e) {
               Thread.currentThread().interrupt();
-          } catch(Exception e) {}
+          } catch(Exception e) {
+            LOGGER.error(() -> new ParameterizedMessage("Monitoring Thread [{}] exception",
+                                                        Thread.currentThread().getName()), e);
+          }
         }
         LOGGER.info("Monitoring Thread [{}] stopped", Thread.currentThread().getName());
       }

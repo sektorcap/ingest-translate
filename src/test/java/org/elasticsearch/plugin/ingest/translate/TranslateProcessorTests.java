@@ -31,6 +31,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.charset.Charset;
 
+import com.cronutils.model.Cron;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
+import static com.cronutils.model.CronType.QUARTZ;
+
 import static org.elasticsearch.ingest.IngestDocumentMatcher.assertIngestDocument;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -64,6 +70,14 @@ public class TranslateProcessorTests extends ESTestCase {
     "    - group3"
   );
 
+  private Cron cron1sec;
+
+  public TranslateProcessorTests() {
+    String strCron1sec = "*/1 * * * * ?";
+    CronParser unixCronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ));
+    cron1sec = unixCronParser.parse(strCron1sec);
+  }
+
   private Path setupDictionary(String dictionary, List<String> lines) throws Exception {
     Path translateConfigDirectory = createTempDir().resolve("ingest-translate");
     Files.createDirectories(translateConfigDirectory);
@@ -82,7 +96,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, 1L);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
     translator.startMonitoring();
 
     String tag = randomAlphaOfLength(10);
@@ -114,7 +128,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, 1L);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
                                                           false, false, translator);
@@ -130,7 +144,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, 1L);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
                                                           false, true, translator);
@@ -145,7 +159,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, 1L);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
                                                           false, true, translator);
@@ -160,7 +174,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, 1L);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
                                                           false, false, translator);
@@ -175,7 +189,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, 1L);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
                                                           false, false, translator);
@@ -189,7 +203,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, complex_dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, 1L);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
@@ -208,7 +222,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, complex_dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, 1L);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
@@ -225,7 +239,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, 1L);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,

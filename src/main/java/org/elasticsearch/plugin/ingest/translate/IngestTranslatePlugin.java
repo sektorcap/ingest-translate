@@ -30,28 +30,36 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.nio.file.Path;
+import java.util.function.Function;
 
+import com.cronutils.model.Cron;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
+import static com.cronutils.model.CronType.QUARTZ;
 
 
 
 public class IngestTranslatePlugin extends Plugin implements IngestPlugin {
 
-  private final Setting<Long> CHECK_INTERVAL_SECONDS = Setting.longSetting("ingest.translate.check_interval", 3600, 0,
-                                                                            Setting.Property.NodeScope);
+  private final Setting<String> CRON_CHECK = new Setting<>("ingest.translate.cron_check", "* 0 * * * ?",
+                                                           Function.identity(), Setting.Property.NodeScope);
 
-  // al posto dei secondi usare una cron expression per definire quando effettuare il check
-  // vedi https://github.com/jmrozanec/cron-utils
   @Override
   public List<Setting<?>> getSettings() {
-      return Arrays.asList(CHECK_INTERVAL_SECONDS);
+      return Arrays.asList(CRON_CHECK);
   }
   @Override
   public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
     Path translateConfigDirectory = parameters.env.configFile().resolve("ingest-translate");
-    Long checkInterval = CHECK_INTERVAL_SECONDS.get(parameters.env.settings());
+    String cronCheck = CRON_CHECK.get(parameters.env.settings());
+
+
+    CronParser unixCronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ));
+    Cron parsedUnixCronExpression = unixCronParser.parse(cronCheck);
 
     return MapBuilder.<String, Processor.Factory>newMapBuilder()
-            .put(TranslateProcessor.TYPE, new TranslateProcessor.Factory(translateConfigDirectory, checkInterval))
+            .put(TranslateProcessor.TYPE, new TranslateProcessor.Factory(translateConfigDirectory, parsedUnixCronExpression))
             .immutableMap();
   }
 

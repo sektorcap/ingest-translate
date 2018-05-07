@@ -31,6 +31,8 @@ import static org.elasticsearch.ingest.ConfigurationUtils.readOptionalStringProp
 import static org.elasticsearch.ingest.ConfigurationUtils.readStringProperty;
 import static org.elasticsearch.ingest.ConfigurationUtils.newConfigurationException;
 
+import com.cronutils.model.Cron;
+
 public class TranslateProcessor extends AbstractProcessor {
 
   public static final String TYPE = "translate";
@@ -91,12 +93,12 @@ public class TranslateProcessor extends AbstractProcessor {
 
     private final HashMap<String, Translator> translators;
     private final Path translateConfigDirectory;
-    private final Long checkInterval;
+    private final Cron cron;
 
-    public Factory(Path translateConfigDirectory, Long checkInterval) {
+    public Factory(Path translateConfigDirectory, Cron cron) {
       this.translators = new HashMap<String, Translator>();
       this.translateConfigDirectory = translateConfigDirectory;
-      this.checkInterval = checkInterval;
+      this.cron = cron;
     }
 
     @Override
@@ -120,7 +122,7 @@ public class TranslateProcessor extends AbstractProcessor {
       synchronized(this) {
         translator = translators.get(dictionary);
         if (translator == null) {
-          translator = new Translator(translateConfigDirectory.resolve(dictionary), checkInterval);
+          translator = new Translator(translateConfigDirectory.resolve(dictionary), cron);
           translators.put(dictionary, translator);
           translator.startMonitoring();
         }

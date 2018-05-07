@@ -47,6 +47,13 @@ import java.security.DigestInputStream;
 import java.security.NoSuchAlgorithmException;
 import java.math.BigInteger;
 
+import com.cronutils.model.Cron;
+import com.cronutils.model.time.ExecutionTime;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.Locale;
+
+
 
 
 final class Translator {
@@ -54,7 +61,7 @@ final class Translator {
 
   // Dictionary file attributes
   private final Path dictionaryPath;
-  private final Long checkInterval;
+  private final Cron cron;
   private String md5;
 
   // The dictionary for the Translator
@@ -68,12 +75,12 @@ final class Translator {
   private final Lock wlock = rwlock.writeLock();
 
 
-  Translator(Path dictionaryPath, Long checkInterval)  throws IOException, NoSuchAlgorithmException {
+  Translator(Path dictionaryPath, Cron cron)  throws IOException, NoSuchAlgorithmException {
     LOGGER.info("Creating Translator for [{}]", dictionaryPath.getFileName().toString());
 
     // Initialize dictionary file attributes
     this.dictionaryPath = dictionaryPath;
-    this.checkInterval = checkInterval;
+    this.cron = cron;
     this.md5 = "";
 
     // Initialize Monitoring Thread attributes
@@ -174,7 +181,10 @@ final class Translator {
         LOGGER.info("Monitoring Thread [{}] started", Thread.currentThread().getName());
         while(!isInterrupted()) {
           try {
-            Thread.sleep(checkInterval*1000);
+            ZonedDateTime now = ZonedDateTime.now();
+            ExecutionTime executionTime = ExecutionTime.forCron(cron);
+            Duration timeToNextExecution = executionTime.timeToNextExecution(now).get();
+            Thread.sleep(timeToNextExecution.toMillis());
             checkMD5AndLoadDictionary();
           } catch(InterruptedException e) {
               Thread.currentThread().interrupt();

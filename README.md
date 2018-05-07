@@ -180,7 +180,7 @@ when to check the changes on the dictionary files.
 ```
 ingest.translate.cron_check: "* 0 * * * ?"
 ```
-The default value is "* 0 * * * ?" (every hour at minute 0).
+The default value is `"* 0 * * * ?"` (every hour at minute 0).
 
 
 ## Setup

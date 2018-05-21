@@ -3,7 +3,8 @@
 A general search and replace tool that uses a file to determine replacement values.
 Currently, this processor supports only YAML files.
 
-Operationally, if the event field specified in the `field` configuration matches the EXACT contents of a dictionary entry key, the field’s value will be substituted with the matched key’s value from the dictionary.
+Operationally, if the event field specified in the `field` configuration matches the contents of a dictionary entry key (case-insensitive),
+the field’s value will be substituted with the matched key’s value from the dictionary.
 
 By default, the processor will replace the contents of the matching event field (in-place). However, by using the `target_field` configuration item, you may also specify a target event field to populate with the new translated value.
 

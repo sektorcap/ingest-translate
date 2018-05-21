@@ -1,4 +1,6 @@
-test: fox
+test1: test1
+Test2: Test2
+TeSt3: TeSt3
 
 ldap:
   host: server1

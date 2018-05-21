@@ -57,7 +57,9 @@ public class TranslateProcessorTests extends ESTestCase {
     "\"4.4.4.4\": \"bot, crawler\""
   );
   private static List<String> complex_dictionary_lines = Arrays.asList(
-    "test: pippo",
+    "test1: test1",
+    "Test2: Test2",
+    "TeSt3: TeSt3",
     "ldap:",
     "  host: server1",
     "  port: 636",
@@ -214,6 +216,40 @@ public class TranslateProcessorTests extends ESTestCase {
     assertThat(data.get("target_field") instanceof Map, is(true));
     Map<String, Object> expetedTargetValue = (Map<String, Object>) data.get("target_field");
     assertThat(expetedTargetValue.get("port"), is(636));
+  }
+
+  public void testComplexYamlCaseInsensitive() throws Exception {
+    String dictionary = "test.yml";
+    Path dictionaryPath = setupDictionary(dictionary, complex_dictionary_lines);
+    Translator translator = new Translator(dictionaryPath, cron1sec);
+
+    IngestDocument ingestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "Test1"));
+    String tag = randomAlphaOfLength(10);
+    TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
+                                                          false, false, translator);
+    processor.execute(ingestDocument);
+    Map<String, Object> data = ingestDocument.getSourceAndMetadata();
+    assertThat(data, hasKey("target_field"));
+    assertThat(data.get("target_field"), is("test1"));
+
+    ingestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "tESt2"));
+    processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
+                                                          false, false, translator);
+    processor.execute(ingestDocument);
+    data = ingestDocument.getSourceAndMetadata();
+    assertThat(data, hasKey("target_field"));
+    assertThat(data.get("target_field"), is("Test2"));
+
+    ingestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "TEST3"));
+    processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
+                                                          false, false, translator);
+    processor.execute(ingestDocument);
+    data = ingestDocument.getSourceAndMetadata();
+    assertThat(data, hasKey("target_field"));
+    assertThat(data.get("target_field"), is("TeSt3"));
   }
 
   public void testComplexYamlWithAddToRoot() throws Exception {

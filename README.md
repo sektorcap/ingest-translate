@@ -10,6 +10,8 @@ By default, the processor will replace the contents of the matching event field 
 For each dictonary file defined in a pipeline through the processor `translate`, a thread will check periodically
 the changes on the file.
 
+Note: the key dictionary check is case-insensitive.
+
 
 ## Anonymize Options
 | Name | Required | Default | Description |
@@ -28,7 +30,7 @@ PUT _ingest/pipeline/translate-pipeline
   "description": "A pipeline to do whatever",
   "processors": [
     {
-      "translate" : {10
+      "translate" : {
         "field"          : "my_field",
         "target_field"   : "target",
         "dictionary"     : "dictionary-test1.yml"
@@ -94,7 +96,7 @@ PUT _ingest/pipeline/translate-pipeline
     {
       "translate" : {
         "field"          : "my_field",
-        "target_field"   : "target",
+        "target_field"   : "target_complex",
         "dictionary"     : "dictionary-test2.yml"
       }
     }
@@ -115,7 +117,7 @@ GET /my-index/my-type/3
   "found": true,
   "_source": {
     "my_field": "ldap",
-    "target": {
+    "target_complex": {
       "host": "server1",
       "port": 636,
       "base": "dc=example,dc=local",
@@ -168,6 +170,38 @@ GET /my-index/my-type/4
     "attribute": "uid",
     "ssl": true,
     "base": "dc=example,dc=local"
+  }
+}
+
+PUT _ingest/pipeline/translate-caseinsensitive-pipeline
+{
+  "description": "A pipeline to do whatever",
+  "processors": [
+    {
+      "translate" : {
+        "field"          : "my_field",
+        "target_field"   : "my_target",
+        "dictionary"     : "dictionary-test2.yml"
+      }
+    }
+  ]
+}
+
+PUT /my-index/my-type/5?pipeline=translate-caseinsensitive-pipeline
+{
+  "my_field" : "TEST3"
+}
+
+GET /my-index/my-type/5
+{
+  "_index": "my-index",
+  "_type": "my-type",
+  "_id": "5",
+  "_version": 1,
+  "found": true,
+  "_source": {
+    "my_field": "TEST3",
+    "my_target": "TeSt3"
   }
 }
 

@@ -37,10 +37,12 @@ import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 import java.security.MessageDigest;
 import java.security.DigestInputStream;
@@ -146,8 +148,9 @@ final class Translator {
     wlock.lock();
     try {
       SpecialPermission.check();
+      Map<String, Object> tmp_dictionary;
       try {
-        dictionary = AccessController.doPrivileged((PrivilegedExceptionAction< Map<String, Object> >) () -> {
+        tmp_dictionary = AccessController.doPrivileged((PrivilegedExceptionAction< Map<String, Object> >) () -> {
           InputStream fileStream = Files.newInputStream(dictionaryPath, StandardOpenOption.READ);
           ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
           return yamlReader.readValue(fileStream, new TypeReference<Map<String,Object>>(){});
@@ -158,6 +161,9 @@ final class Translator {
         // PrivilegedActionException.
         throw (IOException) e.getException();
       }
+
+      dictionary = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+      dictionary.putAll(tmp_dictionary);
 
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Entries for [{}] are:",dictionaryPath.getFileName().toString());

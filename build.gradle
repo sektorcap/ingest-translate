@@ -10,6 +10,10 @@ buildscript {
   }
 }
 
+plugins {
+  id "co.riiid.gradle" version "0.4.2"
+}
+
 group = 'org.elasticsearch.plugin.ingest'
 version = "${elasticsearchVersion}"
 
@@ -51,6 +55,26 @@ bundlePlugin {
    into 'config/'
  }
 }
+
+githubRelease.doFirst {
+  if (!System.getProperty('GITHUB_TOKEN', '')) {
+    throw new Exception('Missing property GITHUB_TOKEN')
+  }
+
+  // check if zip file is there
+  assert file("build/distributions/ingest-translate-${elasticsearchVersion}.zip").exists()
+
+  // configuration
+  github {
+    owner = 'sektorcap'
+    repo = 'ingest-translate'
+    token = System.getProperty('GITHUB_TOKEN')
+    tagName = "${elasticsearchVersion}"
+    assets = [ "build/distributions/ingest-translate-${elasticsearchVersion}.zip" ]
+  }
+}
+
+
 
 compileJava.options.compilerArgs << "-Xlint:-unchecked,-rawtypes"
 compileTestJava.options.compilerArgs << "-Xlint:-unchecked,-rawtypes"

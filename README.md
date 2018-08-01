@@ -14,7 +14,7 @@ the changes on the file.
 Note: the key dictionary check is case-insensitive.
 
 
-## Anonymize Options
+## Translate Options
 | Name | Required | Default | Description |
 |------|----------|---------|-------------|
 |`field`|yes|-|The name of the event field containing the value to be compared for a match.|

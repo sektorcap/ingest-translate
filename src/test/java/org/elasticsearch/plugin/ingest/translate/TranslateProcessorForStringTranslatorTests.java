@@ -42,7 +42,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.hasKey;
 
-public class TranslateProcessorTests extends ESTestCase {
+public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
 
   private static List<String> dictionary_lines = Arrays.asList(
     "\"100.0.111.185\": \"known attacker\"",
@@ -74,7 +74,7 @@ public class TranslateProcessorTests extends ESTestCase {
 
   private Cron cron1sec;
 
-  public TranslateProcessorTests() {
+  public TranslateProcessorForStringTranslatorTests() {
     String strCron1sec = "*/1 * * * * ?";
     CronParser unixCronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ));
     cron1sec = unixCronParser.parse(strCron1sec);

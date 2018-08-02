@@ -58,23 +58,20 @@ import java.util.Locale;
 
 
 
-final class Translator {
-  private static final Logger LOGGER = Loggers.getLogger(Translator.class);
+public abstract class Translator {
+  protected static final Logger LOGGER = Loggers.getLogger(Translator.class);
 
   // Dictionary file attributes
-  private final Path dictionaryPath;
+  protected final Path dictionaryPath;
   private final Cron cron;
   private String md5;
-
-  // The dictionary for the Translator
-  private Map<String, Object> dictionary;
 
   // Monitoring Thread attributes
   private volatile boolean monitoringStarted;
   private Thread monitoringThread;
   private final ReentrantReadWriteLock rwlock = new ReentrantReadWriteLock();
-  private final Lock rlock = rwlock.readLock();
-  private final Lock wlock = rwlock.writeLock();
+  protected final Lock rlock = rwlock.readLock();
+  protected final Lock wlock = rwlock.writeLock();
 
 
   Translator(Path dictionaryPath, Cron cron)  throws IOException, NoSuchAlgorithmException {
@@ -90,7 +87,6 @@ final class Translator {
     this.monitoringThread = null;
 
     // Loading dictionary
-    dictionary = null;
     try {
       checkMD5AndLoadDictionary();
     } catch(Exception e) {
@@ -98,19 +94,10 @@ final class Translator {
                                                   dictionaryPath.getFileName().toString()), e);
       throw e;
     }
-    LOGGER.info("Translator for [{}] created with {} entries", dictionaryPath.getFileName().toString(), dictionary.size());
   }
 
-  public Object lookup(String item) {
-    rlock.lock();
-    try {
-      if (dictionary == null)
-        return null;
-      return dictionary.get(item);
-    } finally {
-      rlock.unlock();
-    }
-  }
+  public abstract Object lookup(String item);
+  protected abstract void loadDictionary() throws IOException;
 
   public void finalize() {
     LOGGER.info("Finalize Translator for [{}]", dictionaryPath.getFileName().toString());
@@ -144,37 +131,6 @@ final class Translator {
     return new BigInteger(1, md5).toString(16);
   }
 
-  private void loadDictionary() throws IOException {
-    wlock.lock();
-    try {
-      SpecialPermission.check();
-      Map<String, Object> tmp_dictionary;
-      try {
-        tmp_dictionary = AccessController.doPrivileged((PrivilegedExceptionAction< Map<String, Object> >) () -> {
-          InputStream fileStream = Files.newInputStream(dictionaryPath, StandardOpenOption.READ);
-          ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-          return yamlReader.readValue(fileStream, new TypeReference<Map<String,Object>>(){});
-        });
-      } catch (PrivilegedActionException e) {
-        // e.getException() should be an instance of IOException
-        // as only checked exceptions will be wrapped in a
-        // PrivilegedActionException.
-        throw (IOException) e.getException();
-      }
-
-      dictionary = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-      dictionary.putAll(tmp_dictionary);
-
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Entries for [{}] are:",dictionaryPath.getFileName().toString());
-        for (Map.Entry<String, Object> entry : dictionary.entrySet()) {
-          LOGGER.debug("  - {}: {}", entry.getKey(), entry.getValue());
-        }
-      }
-    } finally {
-      wlock.unlock();
-    }
-  }
 
   // Thread methods
   public void startMonitoring() {

@@ -96,7 +96,10 @@ public abstract class Translator {
     }
   }
 
-  public abstract Object lookup(String item);
+  public Object lookup(String item) {
+    return lookup(item, false);
+  }
+  public abstract Object lookup(String item, boolean retMultipleValue);
   protected abstract void loadDictionary() throws IOException;
 
   public void finalize() {
@@ -176,6 +179,15 @@ public abstract class Translator {
 
   public boolean isMonitoringStarted() {
     return monitoringStarted;
+  }
+
+  public static final class Factory {
+    public static Translator create(String type, Path dictionaryPath, Cron cron) throws IOException, NoSuchAlgorithmException {
+      if ("string".equalsIgnoreCase(type)) return new StringTranslator(dictionaryPath, cron);
+      if ("ip".equalsIgnoreCase(type))     return new IpTranslator(dictionaryPath, cron);
+
+      throw new IllegalStateException("Invalid translator type: [" + type + "]");
+    }
   }
 
 }

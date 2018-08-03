@@ -43,6 +43,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.net.util.SubnetUtils;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.security.MessageDigest;
 import java.security.DigestInputStream;
@@ -72,27 +74,24 @@ final class IpTranslator extends Translator {
 
 
   @Override
-  public Object lookup(String item) {
+  public Object lookup(String item, boolean retMultipleValue) {
+    List<Object> multipleValue = new ArrayList<Object>();
     rlock.lock();
     try {
       if (dictionary == null)
         return null;
 
       for (Map.Entry<SubnetUtils, Object> entry : dictionary.entrySet()) {
-        if (entry.getKey().getInfo().isInRange(item)) {
-
-          LOGGER.info("Value is {}",entry.getValue());
-
-
-
-          return entry.getValue();
-        }
-
-
-
+        if (entry.getKey().getInfo().isInRange(item))
+          if (!retMultipleValue)
+            return entry.getValue();
+          else
+            multipleValue.add(entry.getValue());
       }
 
-      return null;
+      if (!retMultipleValue || multipleValue.size() == 0)
+        return null;
+      return multipleValue;
     } finally {
       rlock.unlock();
     }

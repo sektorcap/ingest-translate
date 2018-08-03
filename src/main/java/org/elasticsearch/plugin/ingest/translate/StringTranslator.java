@@ -72,7 +72,7 @@ final class StringTranslator extends Translator {
 
 
   @Override
-  public Object lookup(String item) {
+  public Object lookup(String item, boolean retMultipleValue) {
     rlock.lock();
     try {
       if (dictionary == null)

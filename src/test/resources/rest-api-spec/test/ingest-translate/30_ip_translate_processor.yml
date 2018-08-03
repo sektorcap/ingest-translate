@@ -1,0 +1,112 @@
+---
+"Test translate processor with defaults":
+  - do:
+      ingest.put_pipeline:
+        id: "my_pipeline"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "translate" : {
+                  "field" : "field1",
+                  "target_field" : "field2",
+                  "dictionary" : "dictionary-test3.yml",
+                  "type": "ip"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 1
+        pipeline: "my_pipeline"
+        body: {field1: "13.120.128.5"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 1
+  - match: { _source.field1: "13.120.128.5" }
+  - match: { _source.field2: "WI-FI" }
+
+  - do:
+      ingest.put_pipeline:
+        id: "my_pipeline1"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "translate" : {
+                  "field" : "field1",
+                  "target_field" : "complex_field",
+                  "dictionary" : "dictionary-test3.yml",
+                  "type": "ip"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 2
+        pipeline: "my_pipeline1"
+        body: {field1: "10.11.28.128"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 2
+  - match: { _source.field1: "10.11.28.128" }
+  - match: { _source.complex_field.gateway: "gw.lab2.it" }
+  - match: { _source.complex_field.label: "Ingest Lab 2" }
+
+  - do:
+      ingest.put_pipeline:
+        id: "my_pipeline1"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "translate" : {
+                  "field" : "field1",
+                  "target_field" : "multiple_field",
+                  "dictionary" : "dictionary-test3.yml",
+                  "multiple_match": true,
+                  "type": "ip"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 2
+        pipeline: "my_pipeline1"
+        body: {field1: "10.10.22.1"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 2
+  - match: { _source.field1: "10.10.22.1" }
+  - length: { _source.multiple_field: 3 }
+  - match: { _source.multiple_field.0.label: "Internal Net" }
+  - match: { _source.multiple_field.1.label: "Ingest Lab 1" }
+  - match: { _source.multiple_field.2.host: "gw.lab1.it" }
+  - match: { _source.multiple_field.2.label: "GW for Ingest Lab 1" }

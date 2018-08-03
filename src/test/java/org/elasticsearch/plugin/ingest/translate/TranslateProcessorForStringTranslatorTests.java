@@ -103,7 +103,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     processor.execute(ingestDocument);
     Map<String, Object> data = ingestDocument.getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
@@ -133,7 +133,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
     Translator translator = new StringTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
     processor.execute(ingestDocument);
     assertIngestDocument(originalIngestDocument, ingestDocument);
@@ -149,7 +149,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
     Translator translator = new StringTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, true, translator);
+                                                          false, true, false, translator);
     IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
     processor.execute(ingestDocument);
     assertIngestDocument(originalIngestDocument, ingestDocument);
@@ -164,7 +164,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
     Translator translator = new StringTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, true, translator);
+                                                          false, true, false, translator);
     IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
     processor.execute(ingestDocument);
     assertIngestDocument(originalIngestDocument, ingestDocument);
@@ -179,7 +179,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
     Translator translator = new StringTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
     Exception exception = expectThrows(Exception.class, () -> processor.execute(ingestDocument));
     assertThat(exception.getMessage(), equalTo("field [source_field] is null, cannot extract information from the dictionary."));
@@ -194,7 +194,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
     Translator translator = new StringTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     Exception exception = expectThrows(Exception.class, () -> processor.execute(ingestDocument));
     assertThat(exception.getMessage(), equalTo("field [source_field] not present as part of path [source_field]"));
   }
@@ -209,7 +209,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     processor.execute(ingestDocument);
     Map<String, Object> data = ingestDocument.getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
@@ -227,7 +227,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
       RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "Test1"));
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     processor.execute(ingestDocument);
     Map<String, Object> data = ingestDocument.getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
@@ -236,7 +236,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
     ingestDocument =
       RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "tESt2"));
     processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     processor.execute(ingestDocument);
     data = ingestDocument.getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
@@ -245,7 +245,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
     ingestDocument =
       RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "TEST3"));
     processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     processor.execute(ingestDocument);
     data = ingestDocument.getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
@@ -262,7 +262,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          true, false, translator);
+                                                          true, false, false, translator);
     processor.execute(ingestDocument);
     Map<String, Object> data = ingestDocument.getSourceAndMetadata();
     assertThat(data, hasKey("host"));
@@ -279,7 +279,7 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          true, false, translator);
+                                                          true, false, false, translator);
     Exception exception = expectThrows(Exception.class, () -> processor.execute(ingestDocument));
     assertThat(exception.getMessage(), equalTo("cannot add non-map fields to root of document"));
   }

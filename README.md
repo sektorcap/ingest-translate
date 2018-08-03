@@ -3,15 +3,25 @@
 A general search and replace tool that uses a file to determine replacement values.
 Currently, this processor supports only YAML files.
 
-Operationally, if the event field specified in the `field` configuration matches the contents of a dictionary entry key (case-insensitive),
+Operationally, if the event field specified in the `field` configuration matches the contents of a dictionary entry key
 the field’s value will be substituted with the matched key’s value from the dictionary.
 
 By default, the processor will replace the contents of the matching event field (in-place). However, by using the `target_field` configuration item, you may also specify a target event field to populate with the new translated value.
 
-For each dictonary file defined in a pipeline through the processor `translate`, a thread will check periodically
+For each dictionary file defined in a pipeline through the processor `translate`, a thread will check periodically
 the changes on the file.
 
-Note: the key dictionary check is case-insensitive.
+At the moment the processor supports 2 translators: `String Translator` and `Ip Translator`.
+
+## String Translator
+This is the translator used by default. It treats the dictionary keys as `string` case-insensitive.
+
+The multiple match is not allowed.
+
+## Ip Translator
+It treats the dictionary keys as `subnet`. The dictionary keys must be written in `cidr` notation.
+
+The multiple match is allowed in order to support subnets overlapping.
 
 
 ## Translate Options
@@ -19,11 +29,13 @@ Note: the key dictionary check is case-insensitive.
 |------|----------|---------|-------------|
 |`field`|yes|-|The name of the event field containing the value to be compared for a match.|
 |`target_field`|no|`field`|The destination field you wish to populate with the translated value. If not defined `field` will be overwritten.|
-|`dictionary`|yes|-|The filename containng the dictionary. The file must be present in the `ingest-translate` configuration direcotry|
-|`add_to_root`|no|false|Flag that forces the serialized `YAML` item to be injected into the top level of the document. target_field must not be set when this option is chose.|
-|`ignore_missing`|no|false|If `true` and `field` does not exist, the processor quietly exits without modifying the document|
+|`dictionary`|yes|-|The filename containg the dictionary. The file must be present in the `ingest-translate` configuration direcotry|
+|`type`|no|`string`|The translator type (`string` or `ip`)|
+|`multiple_match`|no|`false`|If `true` allows multiple match on the dictionary (used only for `Ip Translator`)|
+|`add_to_root`|no|`false`|Flag that forces the serialized `YAML` item to be injected into the top level of the document. target_field must not be set when this option is chose.|
+|`ignore_missing`|no|`false`|If `true` and `field` does not exist, the processor quietly exits without modifying the document|
 
-## Usage
+## Usage with `String Translator`
 
 ```
 PUT _ingest/pipeline/translate-pipeline
@@ -207,6 +219,166 @@ GET /my-index/my-type/5
 }
 
 ```
+
+## Usage with `Ip Translator`
+
+```
+PUT _ingest/pipeline/translate-pipeline
+{
+  "description": "A pipeline to do whatever",
+  "processors": [
+    {
+      "translate" : {
+        "field"          : "my_field",
+        "target_field"   : "target",
+        "dictionary"     : "dictionary-test3.yml",
+        "type": "ip"
+      }
+    }
+  ]
+}
+
+PUT /my-ipindex/my-type/1?pipeline=translate-pipeline
+{
+  "my_field" : "13.120.128.5"
+}
+
+GET /my-ipindex/my-type/1
+{
+  "_index": "my-ipindex",
+  "_type": "my-type",
+  "_id": "1",
+  "_version": 1,
+  "found": true,
+  "_source": {
+    "my_field": "13.120.128.5",
+    "target": "WI-FI"
+  }
+}
+
+
+PUT _ingest/pipeline/translate-pipeline
+{
+  "description": "A pipeline to do whatever",
+  "processors": [
+    {
+      "translate" : {
+        "field"          : "my_field",
+        "target_field"   : "complex_field",
+        "dictionary"     : "dictionary-test3.yml",
+        "type": "ip"
+      }
+    }
+  ]
+}
+
+PUT /my-ipindex/my-type/2?pipeline=translate-pipeline
+{
+  "my_field" : "10.11.28.128"
+}
+
+GET /my-ipindex/my-type/2
+{
+  "_index": "my-ipindex",
+  "_type": "my-type",
+  "_id": "2",
+  "_version": 1,
+  "found": true,
+  "_source": {
+    "my_field": "10.11.28.128",
+    "complex_field": {
+      "gateway": "gw.lab2.it",
+      "label": "Ingest Lab 2"
+    }
+  }
+}
+
+
+PUT _ingest/pipeline/translate-pipeline
+{
+  "description": "A pipeline to do whatever",
+  "processors": [
+    {
+      "translate" : {
+        "field"          : "my_field",
+        "target_field"   : "multiple_field",
+        "dictionary"     : "dictionary-test3.yml",
+        "multiple_match" : true,
+        "type"           : "ip"
+      }
+    }
+  ]
+}
+
+
+PUT /my-ipindex/my-type/3?pipeline=translate-pipeline
+{
+  "my_field" : "10.10.22.1"
+}
+
+GET /my-ipindex/my-type/3
+{
+  "_index": "my-ipindex",
+  "_type": "my-type",
+  "_id": "3",
+  "_version": 1,
+  "found": true,
+  "_source": {
+    "multiple_field": [
+      {
+        "label": "Internal Net"
+      },
+      {
+        "label": "Ingest Lab 1"
+      },
+      {
+        "host": "gw.lab1.it",
+        "label": "GW for Ingest Lab 1"
+      }
+    ],
+    "my_field": "10.10.22.1"
+  }
+}
+
+
+PUT _ingest/pipeline/translate-pipeline
+{
+  "description": "A pipeline to do whatever",
+  "processors": [
+    {
+      "translate" : {
+        "field"          : "my_field",
+        "target_field"   : "multiple_field",
+        "dictionary"     : "dictionary-test3.yml",
+        "multiple_match" : false,
+        "type"           : "ip"
+      }
+    }
+  ]
+}
+
+PUT /my-ipindex/my-type/4?pipeline=translate-pipeline
+{
+  "my_field" : "10.10.22.1"
+}
+
+GET /my-ipindex/my-type/4
+{
+  "_index": "my-ipindex",
+  "_type": "my-type",
+  "_id": "4",
+  "_version": 1,
+  "found": true,
+  "_source": {
+    "multiple_field": {
+      "label": "Internal Net"
+    },
+    "my_field": "10.10.22.1"
+  }
+}
+```
+
+
 
 ## Configuration
 In `elasticsearch.yml` configuration file you can set the cron expression in [Quartz](http://quartz-scheduler.org/)

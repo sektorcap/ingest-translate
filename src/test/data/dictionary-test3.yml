@@ -1,0 +1,17 @@
+13.113.128.0/17: NET 1
+13.115.128.0/17: NET 2
+13.117.0.0/17: NET 3
+13.119.0.0/17: NET 4
+13.120.128.0/18: WI-FI
+13.121.0.0/16: LAN
+15.140.100.0/22: VPN
+10.10.0.0/16:
+  label: Internal Net
+10.10.22.0/24:
+  label: Ingest Lab 1
+10.10.22.1/32:
+  host: gw.lab1.it
+  label: GW for Ingest Lab 1
+10.11.28.0/24:
+  gateway: gw.lab2.it
+  label: Ingest Lab 2

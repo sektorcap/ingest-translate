@@ -42,39 +42,38 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.hasKey;
 
-public class TranslateProcessorTests extends ESTestCase {
+public class TranslateProcessorForIpTranslatorTests extends ESTestCase {
 
   private static List<String> dictionary_lines = Arrays.asList(
-    "\"100.0.111.185\": \"known attacker\"",
-    "\"100.11.12.193\": \"tor exit node\"",
-    "\"100.0.111.199\": \"bad reputation\"",
-    "\"100.0.111.126\": \"bot, crawler\""
+    "13.113.128.0/17: NET 1",
+    "13.115.128.0/17: NET 2",
+    "13.117.0.0/17: NET 3",
+    "13.119.0.0/17: NET 4"
   );
   private static List<String> new_dictionary_lines = Arrays.asList(
-    "\"1.1.1.1\": \"known attacker\"",
-    "\"2.2.2.2\": \"tor exit node\"",
-    "\"3.3.3.3\": \"bad reputation\"",
-    "\"4.4.4.4\": \"bot, crawler\""
+    "13.120.128.0/18: WI-FI",
+    "13.121.0.0/16: LAN",
+    "15.140.100.0/22: VPN"
   );
   private static List<String> complex_dictionary_lines = Arrays.asList(
-    "test1: test1",
-    "Test2: Test2",
-    "TeSt3: TeSt3",
-    "ldap:",
-    "  host: server1",
-    "  port: 636",
-    "  base: dc=example,dc=local",
-    "  attribute: uid",
-    "  ssl: true",
-    "  allowed_groups:",
-    "    - group1",
-    "    - group2",
-    "    - group3"
+    "10.10.22.0/24: Be-Secure",
+    "10.11.28.0/24:",
+    "  gateway: gw.lab2.it",
+    "  label: Ingest Lab 2"
+  );
+  private static List<String> multiple_match_complex_dictionary_lines = Arrays.asList(
+    "10.10.0.0/16:",
+    "  label: Internal Net",
+    "10.10.22.0/24:",
+    "  label: Ingest Lab 1",
+    "10.10.22.1/32:",
+    "  host: gw.lab1.it",
+    "  label: GW for Ingest Lab 1"
   );
 
   private Cron cron1sec;
 
-  public TranslateProcessorTests() {
+  public TranslateProcessorForIpTranslatorTests() {
     String strCron1sec = "*/1 * * * * ?";
     CronParser unixCronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ));
     cron1sec = unixCronParser.parse(strCron1sec);
@@ -94,29 +93,29 @@ public class TranslateProcessorTests extends ESTestCase {
 
   public void testThatProcessorWorks() throws Exception {
     IngestDocument ingestDocument =
-      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "100.0.111.185"));
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "13.115.128.5"));
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
+    Translator translator = new IpTranslator(dictionaryPath, cron1sec);
     translator.startMonitoring();
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     processor.execute(ingestDocument);
     Map<String, Object> data = ingestDocument.getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
-    assertThat(data.get("target_field"), is("known attacker"));
+    assertThat(data.get("target_field"), is("NET 2"));
 
     appendLinesToDictionary(dictionaryPath, new_dictionary_lines);
     Thread.sleep(2000L);
 
-    ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "2.2.2.2"));
+    ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "13.121.1.1"));
     processor.execute(ingestDocument);
     data = ingestDocument.getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
-    assertThat(data.get("target_field"), is("tor exit node"));
+    assertThat(data.get("target_field"), is("LAN"));
 
     translator.stopMonitoring();
     Thread.sleep(3000L);
@@ -126,19 +125,18 @@ public class TranslateProcessorTests extends ESTestCase {
 
   public void testNoMatch() throws Exception {
     IngestDocument originalIngestDocument =
-      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "10.10.10.10"));
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "192.168.1.1"));
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
+    Translator translator = new StringTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
     processor.execute(ingestDocument);
     assertIngestDocument(originalIngestDocument, ingestDocument);
   }
-
 
   public void testNullValueWithIgnoreMissing() throws Exception {
     IngestDocument originalIngestDocument =
@@ -146,10 +144,10 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
+    Translator translator = new IpTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, true, translator);
+                                                          false, true, false, translator);
     IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
     processor.execute(ingestDocument);
     assertIngestDocument(originalIngestDocument, ingestDocument);
@@ -161,10 +159,10 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
+    Translator translator = new IpTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, true, translator);
+                                                          false, true, false, translator);
     IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
     processor.execute(ingestDocument);
     assertIngestDocument(originalIngestDocument, ingestDocument);
@@ -176,10 +174,10 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
+    Translator translator = new IpTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
     Exception exception = expectThrows(Exception.class, () -> processor.execute(ingestDocument));
     assertThat(exception.getMessage(), equalTo("field [source_field] is null, cannot extract information from the dictionary."));
@@ -191,96 +189,85 @@ public class TranslateProcessorTests extends ESTestCase {
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
+    Translator translator = new IpTranslator(dictionaryPath, cron1sec);
 
     TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     Exception exception = expectThrows(Exception.class, () -> processor.execute(ingestDocument));
     assertThat(exception.getMessage(), equalTo("field [source_field] not present as part of path [source_field]"));
   }
 
   public void testComplexYaml() throws Exception {
     IngestDocument ingestDocument =
-      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "ldap"));
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "10.11.28.1"));
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, complex_dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
+    Translator translator = new IpTranslator(dictionaryPath, cron1sec);
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
+                                                          false, false, false, translator);
     processor.execute(ingestDocument);
     Map<String, Object> data = ingestDocument.getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
     assertThat(data.get("target_field") instanceof Map, is(true));
     Map<String, Object> expetedTargetValue = (Map<String, Object>) data.get("target_field");
-    assertThat(expetedTargetValue.get("port"), is(636));
-  }
-
-  public void testComplexYamlCaseInsensitive() throws Exception {
-    String dictionary = "test.yml";
-    Path dictionaryPath = setupDictionary(dictionary, complex_dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
-
-    IngestDocument ingestDocument =
-      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "Test1"));
-    String tag = randomAlphaOfLength(10);
-    TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
-    processor.execute(ingestDocument);
-    Map<String, Object> data = ingestDocument.getSourceAndMetadata();
-    assertThat(data, hasKey("target_field"));
-    assertThat(data.get("target_field"), is("test1"));
-
-    ingestDocument =
-      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "tESt2"));
-    processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
-    processor.execute(ingestDocument);
-    data = ingestDocument.getSourceAndMetadata();
-    assertThat(data, hasKey("target_field"));
-    assertThat(data.get("target_field"), is("Test2"));
-
-    ingestDocument =
-      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "TEST3"));
-    processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          false, false, translator);
-    processor.execute(ingestDocument);
-    data = ingestDocument.getSourceAndMetadata();
-    assertThat(data, hasKey("target_field"));
-    assertThat(data.get("target_field"), is("TeSt3"));
+    assertThat(expetedTargetValue.get("gateway"), is("gw.lab2.it"));
+    assertThat(expetedTargetValue.get("label"), is("Ingest Lab 2"));
   }
 
   public void testComplexYamlWithAddToRoot() throws Exception {
     IngestDocument ingestDocument =
-      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "ldap"));
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "10.11.28.1"));
 
     String dictionary = "test.yml";
     Path dictionaryPath = setupDictionary(dictionary, complex_dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
+    Translator translator = new IpTranslator(dictionaryPath, cron1sec);
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          true, false, translator);
+                                                          true, false, false, translator);
     processor.execute(ingestDocument);
     Map<String, Object> data = ingestDocument.getSourceAndMetadata();
-    assertThat(data, hasKey("host"));
-    assertThat(data.get("host"), is("server1"));
+    assertThat(data, hasKey("gateway"));
+    assertThat(data.get("gateway"), is("gw.lab2.it"));
   }
 
   public void testAddToRootWithoutComplexYaml() throws Exception {
     IngestDocument ingestDocument =
-      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "100.0.111.185"));
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "10.10.22.5"));
 
     String dictionary = "test.yml";
-    Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
-    Translator translator = new Translator(dictionaryPath, cron1sec);
+    Path dictionaryPath = setupDictionary(dictionary, complex_dictionary_lines);
+    Translator translator = new IpTranslator(dictionaryPath, cron1sec);
 
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
-                                                          true, false, translator);
+                                                          true, false, false, translator);
     Exception exception = expectThrows(Exception.class, () -> processor.execute(ingestDocument));
     assertThat(exception.getMessage(), equalTo("cannot add non-map fields to root of document"));
+  }
+
+  public void testMultipleMatch() throws Exception {
+    IngestDocument ingestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "10.10.22.1"));
+
+    String dictionary = "test.yml";
+    Path dictionaryPath = setupDictionary(dictionary, multiple_match_complex_dictionary_lines);
+    Translator translator = new IpTranslator(dictionaryPath, cron1sec);
+
+    String tag = randomAlphaOfLength(10);
+    TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
+                                                          false, false, true, translator);
+    processor.execute(ingestDocument);
+    Map<String, Object> data = ingestDocument.getSourceAndMetadata();
+    assertThat(data, hasKey("target_field"));
+    assertThat(data.get("target_field") instanceof List, is(true));
+    List<Map<String, Object>> expectedTargetValue = (List<Map<String, Object>>) data.get("target_field");
+    assertThat(expectedTargetValue.get(0).get("label"), is("Internal Net"));
+    assertThat(expectedTargetValue.get(1).get("label"), is("Ingest Lab 1"));
+    assertThat(expectedTargetValue.get(2).get("label"), is("GW for Ingest Lab 1"));
+    assertThat(expectedTargetValue.get(2).get("host"),  is("gw.lab1.it"));
   }
 }

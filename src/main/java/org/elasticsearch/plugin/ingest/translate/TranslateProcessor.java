@@ -42,10 +42,12 @@ public class TranslateProcessor extends AbstractProcessor {
   private final String dictionary;
   private final boolean addToRoot;
   private final boolean ignoreMissing;
+  private final boolean multipleMatch;
   private final Translator translator;
 
   public TranslateProcessor(String tag, String field, String targetField, String dictionary,
-                            boolean addToRoot, boolean ignoreMissing, Translator translator) throws IOException {
+                            boolean addToRoot, boolean ignoreMissing, boolean multipleMatch,
+                            Translator translator) throws IOException {
     super(tag);
     this.field = field;
     this.targetField = targetField;
@@ -53,6 +55,7 @@ public class TranslateProcessor extends AbstractProcessor {
     this.addToRoot = addToRoot;
     this.ignoreMissing = ignoreMissing;
     this.dictionary = dictionary;
+    this.multipleMatch = multipleMatch;
   }
 
   boolean isIgnoreMissing() {
@@ -69,7 +72,7 @@ public class TranslateProcessor extends AbstractProcessor {
       throw new IllegalArgumentException("field [" + field + "] is null, cannot extract information from the dictionary.");
     }
 
-    Object value = translator.lookup(content);
+    Object value = translator.lookup(content, multipleMatch);
     if (value == null)
       return;
 
@@ -109,6 +112,8 @@ public class TranslateProcessor extends AbstractProcessor {
       String dictionary = readStringProperty(TYPE, tag, config, "dictionary");
       boolean ignoreMissing = readBooleanProperty(TYPE, tag, config, "ignore_missing", false);
       boolean addToRoot = readBooleanProperty(TYPE, tag, config, "add_to_root", false);
+      boolean multipleMatch = readBooleanProperty(TYPE, tag, config, "multiple_match", false);
+      String translatorType = readStringProperty(TYPE, tag, config, "type", "string");
 
       if (addToRoot && targetField != null) {
           throw newConfigurationException(TYPE, tag, "target_field",
@@ -122,12 +127,12 @@ public class TranslateProcessor extends AbstractProcessor {
       synchronized(this) {
         translator = translators.get(dictionary);
         if (translator == null) {
-          translator = new Translator(translateConfigDirectory.resolve(dictionary), cron);
+          translator = Translator.Factory.create(translatorType, translateConfigDirectory.resolve(dictionary), cron);
           translators.put(dictionary, translator);
           translator.startMonitoring();
         }
       }
-      return new TranslateProcessor(tag, field, targetField, dictionary, addToRoot, ignoreMissing, translator);
+      return new TranslateProcessor(tag, field, targetField, dictionary, addToRoot, ignoreMissing, multipleMatch, translator);
     }
   }
 }

@@ -139,6 +139,20 @@ public class TranslateProcessorForStringTranslatorTests extends ESTestCase {
     assertIngestDocument(originalIngestDocument, ingestDocument);
   }
 
+  public void testNoIp() throws Exception {
+    IngestDocument originalIngestDocument =
+      RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "abc"));
+
+    String dictionary = "test.yml";
+    Path dictionaryPath = setupDictionary(dictionary, dictionary_lines);
+    Translator translator = new StringTranslator(dictionaryPath, cron1sec);
+
+    TranslateProcessor processor = new TranslateProcessor(randomAlphaOfLength(10), "source_field", "target_field", dictionary,
+                                                          false, false, false, translator);
+    IngestDocument ingestDocument = new IngestDocument(originalIngestDocument);
+    processor.execute(ingestDocument);
+    assertIngestDocument(originalIngestDocument, ingestDocument);
+  }
 
   public void testNullValueWithIgnoreMissing() throws Exception {
     IngestDocument originalIngestDocument =

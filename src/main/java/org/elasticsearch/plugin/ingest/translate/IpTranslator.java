@@ -92,6 +92,9 @@ final class IpTranslator extends Translator {
       if (!retMultipleValue || multipleValue.size() == 0)
         return null;
       return multipleValue;
+    } catch (IllegalArgumentException e) {
+      // in case item is not an ip
+      return null;
     } finally {
       rlock.unlock();
     }

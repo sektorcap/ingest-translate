@@ -21,7 +21,6 @@ import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.RandomDocumentPicks;
 import org.elasticsearch.test.ESTestCase;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +31,6 @@ import java.nio.file.StandardOpenOption;
 import java.nio.charset.Charset;
 
 import com.cronutils.model.Cron;
-import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
 import static com.cronutils.model.CronType.QUARTZ;
@@ -103,8 +101,7 @@ public class TranslateProcessorForIpTranslatorTests extends ESTestCase {
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
                                                           false, false, false, translator);
-    processor.execute(ingestDocument);
-    Map<String, Object> data = ingestDocument.getSourceAndMetadata();
+    Map<String, Object> data = processor.execute(ingestDocument).getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
     assertThat(data.get("target_field"), is("NET 2"));
 
@@ -112,8 +109,7 @@ public class TranslateProcessorForIpTranslatorTests extends ESTestCase {
     Thread.sleep(2000L);
 
     ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), Collections.singletonMap("source_field", "13.121.1.1"));
-    processor.execute(ingestDocument);
-    data = ingestDocument.getSourceAndMetadata();
+    data = processor.execute(ingestDocument).getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
     assertThat(data.get("target_field"), is("LAN"));
 
@@ -208,8 +204,7 @@ public class TranslateProcessorForIpTranslatorTests extends ESTestCase {
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
                                                           false, false, false, translator);
-    processor.execute(ingestDocument);
-    Map<String, Object> data = ingestDocument.getSourceAndMetadata();
+    Map<String, Object> data = processor.execute(ingestDocument).getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
     assertThat(data.get("target_field") instanceof Map, is(true));
     Map<String, Object> expetedTargetValue = (Map<String, Object>) data.get("target_field");
@@ -228,8 +223,9 @@ public class TranslateProcessorForIpTranslatorTests extends ESTestCase {
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
                                                           true, false, false, translator);
-    processor.execute(ingestDocument);
-    Map<String, Object> data = ingestDocument.getSourceAndMetadata();
+    Map<String, Object> data = processor.execute(ingestDocument).getSourceAndMetadata();
+    assertThat(data, hasKey("gateway"));
+
     assertThat(data, hasKey("gateway"));
     assertThat(data.get("gateway"), is("gw.lab2.it"));
   }
@@ -260,8 +256,7 @@ public class TranslateProcessorForIpTranslatorTests extends ESTestCase {
     String tag = randomAlphaOfLength(10);
     TranslateProcessor processor = new TranslateProcessor(tag, "source_field", "target_field", dictionary,
                                                           false, false, true, translator);
-    processor.execute(ingestDocument);
-    Map<String, Object> data = ingestDocument.getSourceAndMetadata();
+    Map<String, Object> data = processor.execute(ingestDocument).getSourceAndMetadata();
     assertThat(data, hasKey("target_field"));
     assertThat(data.get("target_field") instanceof List, is(true));
     List<Map<String, Object>> expectedTargetValue = (List<Map<String, Object>>) data.get("target_field");

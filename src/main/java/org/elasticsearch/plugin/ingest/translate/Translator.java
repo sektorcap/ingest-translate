@@ -23,26 +23,10 @@ import org.elasticsearch.common.logging.Loggers;
 
 import java.nio.file.Path;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.io.InputStream;
 import java.io.IOException;
-import java.lang.Thread;
-import java.lang.StackTraceElement;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.Lock;
-
-import org.elasticsearch.SpecialPermission;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.core.type.TypeReference;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.TreeMap;
 
 import java.security.MessageDigest;
 import java.security.DigestInputStream;
@@ -53,7 +37,6 @@ import com.cronutils.model.Cron;
 import com.cronutils.model.time.ExecutionTime;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.Locale;
 
 
 

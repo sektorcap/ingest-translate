@@ -63,18 +63,18 @@ public class TranslateProcessor extends AbstractProcessor {
   }
 
   @Override
-  public void execute(IngestDocument ingestDocument) throws Exception {
+  public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
     String content = ingestDocument.getFieldValue(field, String.class, ignoreMissing);
 
     if (content == null && ignoreMissing) {
-      return;
+      return ingestDocument;
     } else if (content == null) {
       throw new IllegalArgumentException("field [" + field + "] is null, cannot extract information from the dictionary.");
     }
 
     Object value = translator.lookup(content, multipleMatch);
     if (value == null)
-      return;
+      return ingestDocument;
 
     if (addToRoot && (value instanceof Map)) {
       for (Map.Entry<String, Object> entry : ((Map<String, Object>) value).entrySet()) {
@@ -85,6 +85,7 @@ public class TranslateProcessor extends AbstractProcessor {
     } else {
       ingestDocument.setFieldValue(targetField, value);
     }
+    return ingestDocument;
   }
 
   @Override

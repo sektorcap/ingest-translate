@@ -26,14 +26,10 @@ import org.elasticsearch.plugins.Plugin;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.nio.file.Path;
 import java.util.function.Function;
 
 import com.cronutils.model.Cron;
-import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
 import static com.cronutils.model.CronType.QUARTZ;

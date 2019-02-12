@@ -17,9 +17,9 @@
 
 package org.elasticsearch.plugin.ingest.translate;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.common.logging.Loggers;
 
 import java.nio.file.Path;
 import java.nio.file.Files;
@@ -42,7 +42,7 @@ import java.time.ZonedDateTime;
 
 
 public abstract class Translator {
-  protected static final Logger LOGGER = Loggers.getLogger(Translator.class);
+  protected static final Logger LOGGER = LogManager.getLogger(Translator.class);
 
   // Dictionary file attributes
   protected final Path dictionaryPath;

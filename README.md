@@ -52,15 +52,15 @@ PUT _ingest/pipeline/translate-pipeline
   ]
 }
 
-PUT /my-index/my-type/1?pipeline=translate-pipeline
+PUT /my-index/_doc/1?pipeline=translate-pipeline
 {
   "my_field" : "100.11.12.193"
 }
 
-GET /my-index/my-type/1
+GET /my-index/_doc/1
 {
   "_index": "my-index",
-  "_type": "my-type",
+  "_type": "_doc",
   "_id": "1",
   "_version": 1,
   "found": true,
@@ -84,15 +84,15 @@ PUT _ingest/pipeline/translate-pipeline
   ]
 }
 
-PUT /my-index/my-type/2?pipeline=translate-pipeline
+PUT /my-index/_doc/2?pipeline=translate-pipeline
 {
   "my_field" : "100.11.12.193"
 }
 
-GET /my-index/my-type/2
+GET /my-index/_doc/2
 {
   "_index": "my-index",
-  "_type": "my-type",
+  "_type": "_doc",
   "_id": "2",
   "_version": 1,
   "found": true,
@@ -116,15 +116,15 @@ PUT _ingest/pipeline/translate-pipeline
   ]
 }
 
-PUT /my-index/my-type/3?pipeline=translate-pipeline
+PUT /my-index/_doc/3?pipeline=translate-pipeline
 {
   "my_field" : "ldap"
 }
 
-GET /my-index/my-type/3
+GET /my-index/_doc/3
 {
   "_index": "my-index",
-  "_type": "my-type",
+  "_type": "_doc",
   "_id": "3",
   "_version": 1,
   "found": true,
@@ -159,15 +159,15 @@ PUT _ingest/pipeline/translate-pipeline
   ]
 }
 
-PUT /my-index/my-type/4?pipeline=translate-pipeline
+PUT /my-index/_doc/4?pipeline=translate-pipeline
 {
   "my_field" : "ldap"
 }
 
-GET /my-index/my-type/4
+GET /my-index/_doc/4
 {
   "_index": "my-index",
-  "_type": "my-type",
+  "_type": "_doc",
   "_id": "4",
   "_version": 1,
   "found": true,
@@ -200,15 +200,15 @@ PUT _ingest/pipeline/translate-caseinsensitive-pipeline
   ]
 }
 
-PUT /my-index/my-type/5?pipeline=translate-caseinsensitive-pipeline
+PUT /my-index/_doc/5?pipeline=translate-caseinsensitive-pipeline
 {
   "my_field" : "TEST3"
 }
 
-GET /my-index/my-type/5
+GET /my-index/_doc/5
 {
   "_index": "my-index",
-  "_type": "my-type",
+  "_type": "_doc",
   "_id": "5",
   "_version": 1,
   "found": true,
@@ -238,15 +238,15 @@ PUT _ingest/pipeline/translate-pipeline
   ]
 }
 
-PUT /my-ipindex/my-type/1?pipeline=translate-pipeline
+PUT /my-ipindex/_doc/1?pipeline=translate-pipeline
 {
   "my_field" : "13.120.128.5"
 }
 
-GET /my-ipindex/my-type/1
+GET /my-ipindex/_doc/1
 {
   "_index": "my-ipindex",
-  "_type": "my-type",
+  "_type": "_doc",
   "_id": "1",
   "_version": 1,
   "found": true,
@@ -272,15 +272,15 @@ PUT _ingest/pipeline/translate-pipeline
   ]
 }
 
-PUT /my-ipindex/my-type/2?pipeline=translate-pipeline
+PUT /my-ipindex/_doc/2?pipeline=translate-pipeline
 {
   "my_field" : "10.11.28.128"
 }
 
-GET /my-ipindex/my-type/2
+GET /my-ipindex/_doc/2
 {
   "_index": "my-ipindex",
-  "_type": "my-type",
+  "_type": "_doc",
   "_id": "2",
   "_version": 1,
   "found": true,
@@ -311,15 +311,15 @@ PUT _ingest/pipeline/translate-pipeline
 }
 
 
-PUT /my-ipindex/my-type/3?pipeline=translate-pipeline
+PUT /my-ipindex/_doc/3?pipeline=translate-pipeline
 {
   "my_field" : "10.10.22.1"
 }
 
-GET /my-ipindex/my-type/3
+GET /my-ipindex/_doc/3
 {
   "_index": "my-ipindex",
-  "_type": "my-type",
+  "_type": "_doc",
   "_id": "3",
   "_version": 1,
   "found": true,
@@ -357,15 +357,15 @@ PUT _ingest/pipeline/translate-pipeline
   ]
 }
 
-PUT /my-ipindex/my-type/4?pipeline=translate-pipeline
+PUT /my-ipindex/_doc/4?pipeline=translate-pipeline
 {
   "my_field" : "10.10.22.1"
 }
 
-GET /my-ipindex/my-type/4
+GET /my-ipindex/_doc/4
 {
   "_index": "my-ipindex",
-  "_type": "my-type",
+  "_type": "_doc",
   "_id": "4",
   "_version": 1,
   "found": true,
@@ -382,7 +382,7 @@ GET /my-ipindex/my-type/4
 
 ## Configuration
 In `elasticsearch.yml` configuration file you can set the cron expression in [Quartz](http://quartz-scheduler.org/)
-[format](http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html) to define
+[format](http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html) to define
 when to check the changes on the dictionary files.
 ```
 ingest.translate.cron_check: "* 0 * * * ?"

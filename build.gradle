@@ -20,6 +20,9 @@ version = "${elasticsearchVersion}"
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'elasticsearch.esplugin'
+apply plugin: 'elasticsearch.testclusters'
+apply plugin: 'elasticsearch.rest-resources'
+
 
 // license of this project
 licenseFile = rootProject.file('LICENSE.txt')
@@ -37,9 +40,9 @@ esplugin {
 }
 
 dependencies {
-  compile "com.fasterxml.jackson.core:jackson-databind:2.8.10"
-  compile "com.fasterxml.jackson.core:jackson-annotations:2.8.10"
-  compile "com.cronutils:cron-utils:7.0.1"
+  compile "com.fasterxml.jackson.core:jackson-databind:2.10.4"
+  compile "com.fasterxml.jackson.core:jackson-annotations:2.10.4"
+  compile "com.cronutils:cron-utils:9.0.2"
   compile "commons-net:commons-net:3.6"
 }
 
@@ -91,4 +94,7 @@ dependencyLicenses.enabled = false
 thirdPartyAudit.enabled = false
 
 // Uncomment this to skip license header checks
-// licenseHeaders.enabled = false
+licenseHeaders.enabled = false
+
+// disable validation of pom creation, only needed for sonatype uploads
+validateNebulaPom.enabled = false

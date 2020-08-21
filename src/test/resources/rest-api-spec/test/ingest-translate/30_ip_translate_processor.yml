@@ -22,6 +22,7 @@
   - do:
       index:
         index: test
+        type: test
         id: 1
         pipeline: "my_pipeline"
         body: {field1: "13.120.128.5"}
@@ -29,6 +30,7 @@
   - do:
       get:
         index: test
+        type: test
         id: 1
   - match: { _source.field1: "13.120.128.5" }
   - match: { _source.field2: "WI-FI" }
@@ -55,6 +57,7 @@
   - do:
       index:
         index: test
+        type: test
         id: 2
         pipeline: "my_pipeline1"
         body: {field1: "10.11.28.128"}
@@ -62,6 +65,7 @@
   - do:
       get:
         index: test
+        type: test
         id: 2
   - match: { _source.field1: "10.11.28.128" }
   - match: { _source.complex_field.gateway: "gw.lab2.it" }
@@ -90,6 +94,7 @@
   - do:
       index:
         index: test
+        type: test
         id: 2
         pipeline: "my_pipeline1"
         body: {field1: "10.10.22.1"}
@@ -97,6 +102,7 @@
   - do:
       get:
         index: test
+        type: test
         id: 2
   - match: { _source.field1: "10.10.22.1" }
   - length: { _source.multiple_field: 3 }

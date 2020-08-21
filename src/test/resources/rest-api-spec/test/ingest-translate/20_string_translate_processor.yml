@@ -21,6 +21,7 @@
   - do:
       index:
         index: test
+        type: test
         id: 1
         pipeline: "my_pipeline"
         body: {field1: "100.11.12.193"}
@@ -28,6 +29,7 @@
   - do:
       get:
         index: test
+        type: test
         id: 1
   - match: { _source.field1: "100.11.12.193" }
   - match: { _source.field2: "tor exit node" }
@@ -53,6 +55,7 @@
   - do:
       index:
         index: test
+        type: test
         id: 2
         pipeline: "my_pipeline1"
         body: {field1: "ldap"}
@@ -60,6 +63,7 @@
   - do:
       get:
         index: test
+        type: test
         id: 2
   - match: { _source.field1: "ldap" }
   - match: { _source.complex_field.port: 636 }
@@ -85,6 +89,7 @@
   - do:
       index:
         index: test
+        type: test
         id: 2
         pipeline: "my_pipeline1"
         body: {field1: "TEST3"}
@@ -92,6 +97,7 @@
   - do:
       get:
         index: test
+        type: test
         id: 2
   - match: { _source.field1: "TEST3" }
   - match: { _source.caseinsensitive_field: "TeSt3" }

@@ -393,21 +393,21 @@ The default value is `"* 0 * * * ?"` (every hour at minute 0).
 ## Setup
 Remember to set the `elasticsearchVersion` parameter in your `gradle.properties` file.
 
-In order to install this plugin, you need to create a zip distribution first by running
+In order to install this plugin, you need to create a zip distribution first by running.
 
 ```bash
 gradle clean check
 ```
 This will produce a zip file in `build/distributions`.
 
-After building the zip file, you can install it like this
+After building the zip file, you can install it like this.
 
 ```bash
 bin/elasticsearch-plugin install file:///path/to/ingest-translate/build/distribution/ingest-translate-x.y.z.zip
 ```
 
 ## Java
-Starting from `elasticsearch 6.2`, developers must use Java 9.
+Starting from `elasticsearch 7.x`, developers must use Java 14.
 
 ## Bugs & TODO
 

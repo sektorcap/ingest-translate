@@ -45,10 +45,10 @@ public class TranslateProcessor extends AbstractProcessor {
   private final boolean multipleMatch;
   private final Translator translator;
 
-  public TranslateProcessor(String tag, String field, String targetField, String dictionary,
+  public TranslateProcessor(String tag, String description, String field, String targetField, String dictionary,
                             boolean addToRoot, boolean ignoreMissing, boolean multipleMatch,
                             Translator translator) throws IOException {
-    super(tag);
+    super(tag, description);
     this.field = field;
     this.targetField = targetField;
     this.translator = translator;
@@ -106,7 +106,8 @@ public class TranslateProcessor extends AbstractProcessor {
     }
 
     @Override
-    public TranslateProcessor create(Map<String, Processor.Factory> factories, String tag, Map<String, Object> config)
+    public TranslateProcessor create(Map<String, Processor.Factory> factories, String tag, String description,
+                                     Map<String, Object> config)
       throws Exception {
       String field = readStringProperty(TYPE, tag, config, "field");
       String targetField = readOptionalStringProperty(TYPE, tag, config, "target_field");
@@ -133,7 +134,8 @@ public class TranslateProcessor extends AbstractProcessor {
           translator.startMonitoring();
         }
       }
-      return new TranslateProcessor(tag, field, targetField, dictionary, addToRoot, ignoreMissing, multipleMatch, translator);
+      return new TranslateProcessor(tag, description, field, targetField, dictionary,
+                                    addToRoot, ignoreMissing, multipleMatch, translator);
     }
   }
 }

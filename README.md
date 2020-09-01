@@ -393,17 +393,17 @@ The default value is `"* 0 * * * ?"` (every hour at minute 0).
 ## Setup
 Remember to set the `elasticsearchVersion` parameter in your `gradle.properties` file.
 
-In order to install this plugin, you need to create a zip distribution first by running.
+First you need to create a zip distribution by running:
 
 ```bash
 gradle clean check
 ```
 This will produce a zip file in `build/distributions`.
 
-After building the zip file, you can install it like this.
+After building the zip file, you can install it:
 
 ```bash
-bin/elasticsearch-plugin install file:///path/to/ingest-translate/build/distribution/ingest-translate-x.y.z.zip
+bin/elasticsearch-plugin install file:///path/to/ingest-anonymize/build/distribution/ingest-anonymize-x.y.z.zip
 ```
 
 ## Java
@@ -415,5 +415,5 @@ Starting from `elasticsearch 7.x`, developers must use Java 14.
 * and todos...
 
 ## Acknowledgements
-Thanks to [Alexander Reelsen](https://github.com/spinscale) for his project
+Thanks to [Alexander Reelsen](https://github.com/spinscale) for the project
 https://github.com/spinscale/cookiecutter-elasticsearch-ingest-processor.

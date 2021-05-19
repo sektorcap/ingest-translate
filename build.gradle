@@ -20,8 +20,7 @@ version = "${elasticsearchVersion}"
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'elasticsearch.esplugin'
-apply plugin: 'elasticsearch.testclusters'
-apply plugin: 'elasticsearch.rest-resources'
+apply plugin: 'elasticsearch.yaml-rest-test'
 
 
 // license of this project
@@ -44,6 +43,10 @@ dependencies {
   compile "com.fasterxml.jackson.core:jackson-annotations:2.10.4"
   compile "com.cronutils:cron-utils:9.0.2"
   compile "commons-net:commons-net:3.6"
+  compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
+
+  // the yaml tests require a log4j2 dependency, otherwise a dependency is thrown on startup
+  yamlRestTestImplementation 'org.apache.logging.log4j:log4j-core:2.11.1'
 }
 
 task copyTestFiles(type: Copy) {
@@ -78,23 +81,16 @@ githubRelease.doFirst {
   }
 }
 
-
-
 compileJava.options.compilerArgs << "-Xlint:-unchecked,-rawtypes"
 compileTestJava.options.compilerArgs << "-Xlint:-unchecked,-rawtypes"
 
-// Set to false to not use elasticsearch checkstyle rules
-checkstyleMain.enabled = true
-checkstyleTest.enabled = true
-
-// FIXME dependency license check needs to be enabled
-dependencyLicenses.enabled = false
-
-// FIXME thirdparty audit needs to be enabled
-thirdPartyAudit.enabled = false
-
-// Uncomment this to skip license header checks
-licenseHeaders.enabled = false
-
 // disable validation of pom creation, only needed for sonatype uploads
 validateNebulaPom.enabled = false
+
+// disable Javadoc tasks
+tasks.withType(Javadoc).all { enabled = false }
+
+// ignore javadoc linting errors for now
+tasks.withType(Javadoc) {
+  options.addStringOption('Xdoclint:none', '-quiet')
+}

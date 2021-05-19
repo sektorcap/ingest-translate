@@ -1,4 +1,4 @@
-elasticsearchVersion = 7.9.1
+elasticsearchVersion = 7.12.1
 
 // systemProp.http.proxyHost=xxxxxxxxxx.xxxx.xxx
 // systemProp.http.proxyPort=3128

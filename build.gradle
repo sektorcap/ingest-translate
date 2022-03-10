@@ -1,17 +1,29 @@
-buildscript {
-  repositories {
-    mavenLocal()
-    mavenCentral()
-    jcenter()
-  }
+import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
+import org.gradle.api.tasks.Input;
+import org.gradle.process.CommandLineArgumentProvider;
 
+import java.nio.file.Files
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+buildscript {
   dependencies {
     classpath "org.elasticsearch.gradle:build-tools:${elasticsearchVersion}"
+  }
+  repositories {
+    mavenCentral()
   }
 }
 
 plugins {
-  id "co.riiid.gradle" version "0.4.2"
+  id "com.github.humblerookie.gradle" version "0.4.4"
+  id "com.github.ben-manes.versions" version '0.33.0'
+}
+
+repositories {
+  mavenCentral()
 }
 
 group = 'org.elasticsearch.plugin.ingest'
@@ -20,33 +32,26 @@ version = "${elasticsearchVersion}"
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'elasticsearch.esplugin'
-apply plugin: 'elasticsearch.yaml-rest-test'
+apply plugin: 'elasticsearch.testclusters'
 
-
-// license of this project
-licenseFile = rootProject.file('LICENSE.txt')
-// copyright notices
-noticeFile = rootProject.file('NOTICE.txt')
+sourceCompatibility = '11'
 
 esplugin {
-  name 'ingest-translate'
-  description 'Replaces field contents based on replacement values specified in a file'
-  classname 'org.elasticsearch.plugin.ingest.translate.IngestTranslatePlugin'
+  name = 'ingest-translate'
+  description = 'Replaces field contents based on replacement values specified in a file'
+  classname = 'org.elasticsearch.plugin.ingest.translate.IngestTranslatePlugin'
   // license of the plugin, may be different than the above license
-  licenseFile rootProject.file('LICENSE.txt')
+  licenseFile = rootProject.file('LICENSE.txt')
   // copyright notices, may be different than the above notice
-  noticeFile rootProject.file('NOTICE.txt')
+  noticeFile = rootProject.file('NOTICE.txt')
 }
 
 dependencies {
-  compile "com.fasterxml.jackson.core:jackson-databind:2.10.4"
-  compile "com.fasterxml.jackson.core:jackson-annotations:2.10.4"
-  compile "com.cronutils:cron-utils:9.0.2"
-  compile "commons-net:commons-net:3.6"
-  compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
-
-  // the yaml tests require a log4j2 dependency, otherwise a dependency is thrown on startup
-  yamlRestTestImplementation 'org.apache.logging.log4j:log4j-core:2.11.1'
+  implementation "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
+  implementation "com.fasterxml.jackson.core:jackson-annotations:2.10.4"
+  implementation "com.cronutils:cron-utils:9.0.2"
+  implementation "com.fasterxml.jackson.core:jackson-databind:2.10.4"
+  implementation "commons-net:commons-net:3.6"
 }
 
 task copyTestFiles(type: Copy) {
@@ -84,8 +89,6 @@ githubRelease.doFirst {
 compileJava.options.compilerArgs << "-Xlint:-unchecked,-rawtypes"
 compileTestJava.options.compilerArgs << "-Xlint:-unchecked,-rawtypes"
 
-// disable validation of pom creation, only needed for sonatype uploads
-validateNebulaPom.enabled = false
 
 // disable Javadoc tasks
 tasks.withType(Javadoc).all { enabled = false }
@@ -93,4 +96,89 @@ tasks.withType(Javadoc).all { enabled = false }
 // ignore javadoc linting errors for now
 tasks.withType(Javadoc) {
   options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+// setup yaml rest tests
+testClusters {
+  yamlRestTest
+}
+
+sourceSets {
+  yamlRestTest
+}
+
+configurations {
+  yamlRestTestImplementation.extendsFrom testImplementation
+  yamlRestTestRuntimeOnly.extendsFrom testRuntimeOnly
+  restTestSpecs
+}
+
+tasks.register('copyRestTestSpecs', Copy) {
+  from zipTree(configurations.restTestSpecs.singleFile)
+  into "$buildDir/restResources/restspec"
+}
+
+TaskProvider<Zip> bundle = project.getTasks().withType(Zip.class).named("bundlePlugin");
+
+// Register rest resources with source set
+sourceSets.yamlRestTest.getOutput().dir("$buildDir/restResources/restspec");
+
+tasks.register('yamlRestTest', StandaloneRestIntegTestTask) { testTask ->
+    testTask.dependsOn(bundle, 'copyRestTestSpecs')
+
+    def cluster = testClusters.yamlRestTest
+    cluster.plugin(bundle.flatMap(AbstractArchiveTask::getArchiveFile))
+    testTask.useCluster(testClusters.yamlRestTest)
+
+    testTask.mustRunAfter(project.getTasks().named("test"))
+    testTask.setTestClassesDirs(sourceSets.yamlRestTest.getOutput().getClassesDirs())
+    testTask.setClasspath(sourceSets.yamlRestTest.getRuntimeClasspath())
+
+
+    SystemPropertyCommandLineArgumentProvider nonInputProperties = new SystemPropertyCommandLineArgumentProvider()
+    nonInputProperties.systemProperty("tests.rest.cluster", "${-> String.join(",", cluster.getAllHttpSocketURI())}")
+    nonInputProperties.systemProperty("tests.cluster", "${-> String.join(",", cluster.getAllTransportPortURI())}")
+    nonInputProperties.systemProperty("tests.clustername", "${-> cluster.getName()}")
+    testTask.getJvmArgumentProviders().add(nonInputProperties)
+    testTask.systemProperty("tests.rest.load_packaged", Boolean.FALSE.toString())
+}
+
+// this is a bit of a hack to make sure we run the test tests when releasing...
+check.dependsOn 'yamlRestTest'
+
+dependencies {
+  yamlRestTestImplementation "org.elasticsearch.test:framework:$elasticsearchVersion"
+  restTestSpecs "org.elasticsearch:rest-api-spec:$elasticsearchVersion"
+}
+
+// This will be available in 7.15 in build tools and not manually declared. 
+public class SystemPropertyCommandLineArgumentProvider implements CommandLineArgumentProvider {
+    private final Map<String, Object> systemProperties = new LinkedHashMap<>();
+
+    public void systemProperty(String key, Supplier<String> value) {
+        systemProperties.put(key, value);
+    }
+
+    public void systemProperty(String key, Object value) {
+        systemProperties.put(key, value);
+    }
+
+    @Override
+    public Iterable<String> asArguments() {
+        return systemProperties.entrySet()
+            .stream()
+            .map(
+                entry -> "-D"
+                    + entry.getKey()
+                    + "="
+                    + (entry.getValue() instanceof Supplier ? ((Supplier) entry.getValue()).get() : entry.getValue())
+            )
+            .collect(Collectors.toList());
+    }
+
+    // Track system property keys as an input so our build cache key will change if we add properties but values are still ignored
+    @Input
+    public Iterable<String> getPropertyNames() {
+        return systemProperties.keySet();
+    }
 }
